@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { UserPlus, Trash2, Loader2, Download } from 'lucide-react';
 import { generateRegistrationPDF } from './utils/pdfGenerator';
+import ResultModal from "./components/ResultModal";
 
 interface Member {
   name: string;
@@ -16,6 +17,9 @@ interface FormData {
 }
 
 function App() {
+  const [showModal, setShowModal] = useState(false);
+  const [isSuccessModal, setIsSuccessModal] = useState(false);
+
   const [formData, setFormData] = useState<FormData>({
     name: '',
     mobile_number: '',
@@ -65,13 +69,16 @@ function App() {
     };
 
     try {
-      const response = await fetch('https://sportims-other-api.justvy.com/create-registration-with-members/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
+      const response = await fetch(
+        'https://sportims-other-api.justvy.com/create-registration-with-members/',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload)
+        }
+      );
 
       if (response.ok) {
         const pdfData = {
@@ -87,7 +94,9 @@ function App() {
 
         generateRegistrationPDF(pdfData);
 
-        setMessage({ type: 'success', text: 'Registration submitted successfully! PDF downloaded.' });
+        setIsSuccessModal(true);
+        setShowModal(true);
+
         setFormData({
           name: '',
           mobile_number: '',
@@ -95,10 +104,12 @@ function App() {
           members: []
         });
       } else {
-        setMessage({ type: 'error', text: 'Failed to submit registration. Please try again.' });
+        setIsSuccessModal(false);
+        setShowModal(true);
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Network error. Please check your connection.' });
+      setIsSuccessModal(false);
+      setShowModal(true);
     } finally {
       setIsSubmitting(false);
     }
@@ -107,9 +118,18 @@ function App() {
   return (
     <div className="min-h-screen bg-white py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
-        <div className="mb-8">
+        <div className="mb-6 md:mb-7">
           <h1 className="text-3xl font-light text-gray-900 text-center">Rotary International District 3233</h1>
           <p className="mt-2 text-sm text-gray-600 text-center">Please complete the form below</p>
+          
+          {/* Banner Image*/}
+          <div className="mt-7">
+            <img
+              src="/image/banner.jpg"
+              alt="Banner"
+              className="w-full h-40 md:h-48 object-cover"
+            />
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
@@ -145,6 +165,8 @@ function App() {
                 onChange={(e) => setFormData({ ...formData, mobile_number: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 focus:ring-1 focus:ring-gray-900 focus:border-gray-900 outline-none transition-colors"
                 placeholder="Enter your mobile number"
+                pattern="\d{10}"
+                maxLength={10}
               />
             </div>
 
@@ -276,6 +298,14 @@ function App() {
           </button>
         </form>
       </div>
+
+      {/*Modal*/}
+      <ResultModal
+        show={showModal}
+        success={isSuccessModal}
+        onClose={() => setShowModal(false)}
+      />
+
     </div>
   );
 }
